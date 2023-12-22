@@ -2,11 +2,12 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "vidoes backend structure",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "author": "sandeep shakya",
   "license": "ISC",
