@@ -48,8 +48,8 @@ export const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "User Already exist");
   }
 
-  const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  const avatarLocalPath = req?.files?.avatar?.[0]?.path;
+  const coverImageLocalPath = req?.files?.coverImage?.[0]?.path;
 
   // req.files by multer
 
@@ -74,7 +74,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 
   const savedUser = await newUser.save();
-  console.log(savedUser);
+  console.log("Saved User", savedUser);
 
   if (!savedUser) {
     throw new ApiError(500, "Some thing went wrong while registering user");
