@@ -19,13 +19,6 @@ function ValidateEmail(mail) {
   return false;
 }
 
-export const loginUser = asyncHandler(async (req, res) => {
-  res.status(201).json({
-    message: "User login successfully",
-    user: [],
-  });
-});
-
 export const registerUser = asyncHandler(async (req, res) => {
   // req.body by express
   const { fullName, email, userName, password } = req.body;
@@ -87,3 +80,46 @@ export const registerUser = asyncHandler(async (req, res) => {
       .json(new ApiResponse(201, "User registered successfully", savedUser));
   }
 });
+
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email && !password) {
+    throw new ApiError(400, "Please enter all details");
+  }
+
+  if (!ValidateEmail(email)) {
+    throw new ApiError(400, "Email is not valid");
+  }
+
+  const user = await User.findOne({ email: email });
+
+  if (user) {
+    let check = await user.isPasswordCheck(password, user.password);
+    if (check) {
+      const accesstoken = await user.genrateAccessToken();
+      const refreshtoken = await user.genrateRefreshToken();
+      user.refreshToken = refreshtoken;
+
+      const options = {
+        httpOnly: true,
+        secure: true,
+      };
+
+      res
+        .status(200)
+        .cookie("accessToken", accesstoken, options)
+        .cookie("refreshToken", refreshtoken, options)
+        .json({
+          message: "User login successfully",
+          user: user,
+        });
+    } else {
+      throw new ApiError(400, "Password is not valid");
+    }
+  } else {
+    throw new ApiError(400, "User is not valid");
+  }
+});
+
+// export const logoutUser = asyncHandler(async (req, res) => {});
