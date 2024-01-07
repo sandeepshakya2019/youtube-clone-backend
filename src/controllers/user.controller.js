@@ -110,10 +110,7 @@ export const loginUser = asyncHandler(async (req, res) => {
         .status(200)
         .cookie("accessToken", accesstoken, options)
         .cookie("refreshToken", refreshtoken, options)
-        .json({
-          message: "User login successfully",
-          user: user,
-        });
+        .json(new ApiResponse(201, "User login successfully", user));
     } else {
       throw new ApiError(400, "Password is not valid");
     }
@@ -122,4 +119,20 @@ export const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
-// export const logoutUser = asyncHandler(async (req, res) => {});
+export const logoutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { refreshToken: undefined } },
+    { new: true }
+  );
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(201, "User logout successfully"));
+});
