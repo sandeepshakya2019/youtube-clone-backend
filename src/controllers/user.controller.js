@@ -3,12 +3,12 @@ import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/Cloudinary.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 export const defaultRoute = asyncHandler(async (req, res) => {
-  res.status(201).json({
-    message: "Get User Success",
-    user: [],
-  });
+  const user = await User.find();
+  console.log(user);
+  res.status(201).json(new ApiResponse(200, "Uder get success", user));
 });
 
 function ValidateEmail(mail) {
@@ -101,6 +101,8 @@ export const loginUser = asyncHandler(async (req, res) => {
       const refreshtoken = await user.genrateRefreshToken();
       user.refreshToken = refreshtoken;
 
+      await user.save({ validateBeforeSave: false });
+
       const options = {
         httpOnly: true,
         secure: true,
@@ -135,4 +137,44 @@ export const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(201, "User logout successfully"));
+});
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(400, "Unauthroize requeste");
+  }
+
+  const decodeToken = jwt.verify(
+    incomingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+
+  const user = await User.findById(decodeToken?._id);
+  if (!user) {
+    throw new ApiError(400, "Invalid refresh token");
+  }
+
+  if (incomingRefreshToken !== user?.refreshToken) {
+    throw new ApiError(400, "Refresh token is expired");
+  }
+
+  const accesstoken = await user.genrateAccessToken();
+  const refreshtoken = await user.genrateRefreshToken();
+  user.refreshToken = refreshtoken;
+
+  await user.save({ validateBeforeSave: false });
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .cookie("accessToken", accesstoken, options)
+    .cookie("refreshToken", refreshtoken, options)
+    .json(new ApiResponse(201, "Access token refreshed", user));
 });

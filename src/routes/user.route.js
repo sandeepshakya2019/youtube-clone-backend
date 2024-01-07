@@ -3,16 +3,16 @@ import {
   defaultRoute,
   loginUser,
   logoutUser,
+  refreshAccessToken,
   registerUser,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT, verifyJWTatLogin } from "../middlewares/auth.middleware.js";
 
 const route = Router();
 
 route.get("/", defaultRoute);
-route.post("/login", loginUser);
-route.post("/logout", verifyJWT, logoutUser);
+route.post("/login", verifyJWTatLogin, loginUser);
 route.post(
   "/register",
   upload.fields([
@@ -21,5 +21,7 @@ route.post(
   ]),
   registerUser
 );
+route.post("/logout", verifyJWT, logoutUser);
+route.post("/refreshtoken", refreshAccessToken);
 
 export default route;
